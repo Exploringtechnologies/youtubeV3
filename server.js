@@ -16,8 +16,8 @@ app.get('/api/getVideoId', async (req, res) => {
 
     // Check if a search query is provided
     if (req.query.search) {
-      // Fetch the YouTube video details based on the search query
-      const videoDetailsResponse = await axios.get(
+      // Fetch the YouTube video ID based on the search query
+      const searchResponse = await axios.get(
         `https://www.googleapis.com/youtube/v3/search`,
         {
           params: {
@@ -29,32 +29,12 @@ app.get('/api/getVideoId', async (req, res) => {
         }
       );
 
-      // Check if there are any search results
-      if (videoDetailsResponse.data.items.length > 0) {
-        // Extract the video ID from the first search result
-        videoId = videoDetailsResponse.data.items[0].id.videoId;
-      } else {
-        // Use a default video ID if there are no search results
-        videoId = '1oOfDfVttRo'; // Replace with your default video ID
-      }
+      // Extract the video ID from the search response
+      videoId = searchResponse.data.items[0]?.id.videoId;
     } else {
       // Use a default video ID if no search query is provided
       videoId = '1oOfDfVttRo'; // Replace with your default video ID
     }
-
-    // Fetch video details using the obtained video ID
-    const videoDetailsResponse = await axios.get(
-      `https://www.googleapis.com/youtube/v3/videos`,
-      {
-        params: {
-          part: 'snippet,contentDetails,statistics',
-          id: videoId,
-          key: process.env.YOUTUBE_API_KEY,
-        },
-      }
-    );
-
-    // Process video details as needed
 
     res.json({ videoId, apiKey: process.env.YOUTUBE_API_KEY });
   } catch (error) {

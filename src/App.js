@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -7,20 +7,26 @@ function App() {
   const [videoId, setVideoId] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
-  const handleSearch = async () => {
-    try {
-      // Fetch video details using the provided video ID
-      const response = await axios.get('/api/getVideoDetails', {
-        params: {
-          videoId: searchInput,
-        },
+  useEffect(() => {
+    // Fetch the default YouTube video ID from the server
+    axios.get('/api/getVideoId')
+      .then(response => {
+        setVideoId(response.data.videoId);
+      })
+      .catch(error => {
+        console.error('Error fetching video ID:', error);
       });
+  }, []);
 
-      // Set the video ID to play
-      setVideoId(response.data.videoId);
-    } catch (error) {
-      console.error('Error fetching video details:', error);
-    }
+  const handleSearch = () => {
+    // Fetch the YouTube video ID based on the search input
+    axios.get(`/api/getVideoId?search=${searchInput}`)
+      .then(response => {
+        setVideoId(response.data.videoId);
+      })
+      .catch(error => {
+        console.error('Error fetching video ID:', error);
+      });
   };
 
   return (
