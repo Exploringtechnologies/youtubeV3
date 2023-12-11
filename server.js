@@ -9,42 +9,56 @@ const port = process.env.PORT || 5000;
 // Serve the React app
 app.use(express.static('build'));
 
-// API route to get the YouTube video details based on the video ID
-app.get('/api/getVideoDetails', async (req, res) => {
+// API route to get the YouTube video ID
+app.get('/api/getVideoId', async (req, res) => {
   try {
-    // Check if a video ID is provided
-    if (!req.query.videoId) {
-      return res.status(400).json({ error: 'Video ID is required.' });
+    let videoId;
+
+    // Check if a search query is provided
+    if (req.query.search) {
+      // Fetch the YouTube video details based on the search query
+      const videoDetailsResponse = await axios.get(
+        `https://www.googleapis.com/youtube/v3/search`,
+        {
+          params: {
+            part: 'snippet',
+            q: req.query.search,
+            type: 'video',
+            key: process.env.YOUTUBE_API_KEY,
+          },
+        }
+      );
+
+      // Check if there are any search results
+      if (videoDetailsResponse.data.items.length > 0) {
+        // Extract the video ID from the first search result
+        videoId = videoDetailsResponse.data.items[0].id.videoId;
+      } else {
+        // Use a default video ID if there are no search results
+        videoId = '1oOfDfVttRo'; // Replace with your default video ID
+      }
+    } else {
+      // Use a default video ID if no search query is provided
+      videoId = '1oOfDfVttRo'; // Replace with your default video ID
     }
 
-    // Fetch video details using the provided video ID
+    // Fetch video details using the obtained video ID
     const videoDetailsResponse = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos`,
       {
         params: {
           part: 'snippet,contentDetails,statistics',
-          id: req.query.videoId,
+          id: videoId,
           key: process.env.YOUTUBE_API_KEY,
         },
       }
     );
 
-    // Check if the video ID corresponds to an unlisted video
-    const isVideoUnlisted =
-      videoDetailsResponse.data.items.length > 0 &&
-      videoDetailsResponse.data.items[0].status.privacyStatus === 'unlisted';
+    // Process video details as needed
 
-    if (!isVideoUnlisted) {
-      return res.status(404).json({ error: 'Unlisted video not found.' });
-    }
-
-    // Return the video details
-    res.json({
-      videoId: req.query.videoId,
-      apiKey: process.env.YOUTUBE_API_KEY,
-    });
+    res.json({ videoId, apiKey: process.env.YOUTUBE_API_KEY });
   } catch (error) {
-    console.error('Error fetching video details:', error);
+    console.error('Error fetching video ID:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
